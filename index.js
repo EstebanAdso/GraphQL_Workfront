@@ -47,6 +47,23 @@ const typeDefs = `#graphql
         priority: String
     }
 
+    type Category{
+        ID: String
+        name: String
+        objCode: String
+        customerID: String
+    }
+
+    type AssignedCategoryToProject{
+        projectID: String
+        categoryID: String
+    }
+
+    type AssignedCategoryToTask{
+        taskID: String
+        categoryID: String
+    }
+
     type IssueTask{
         projectID: String
         name: String
@@ -57,6 +74,12 @@ const typeDefs = `#graphql
         assignedToID: String
         sourceObjID: String
         sourceObjCode: String
+    }
+
+    type Note{
+        noteText: String
+        objID: String
+        noteObjCode: String
     }
 
     type User{
@@ -70,6 +93,7 @@ const typeDefs = `#graphql
         getProjects(ownerID: String): [Project]
         getTasksById(projectID: String): [Task]
         getUserById(ID: String): [User]
+        getAllCategories: [Category]
     }
 
     type Mutation {
@@ -85,6 +109,12 @@ const typeDefs = `#graphql
         
         createIssueTask(projectID: String, name: String, description: String, status: String, priority: String, opTaskType: String = "ISU",
         assignedToID: String = null, sourceObjID: String, sourceObjCode: String = "TASK"): IssueTask
+
+        AssignedCategoryToProject(projectID: String, categoryID: String): AssignedCategoryToProject
+
+        AssignedCategoryToTask(taskID: String, categoryID: String): AssignedCategoryToTask
+
+        createNote(noteText: String, objID: String, noteObjCode: String = "TASK"): Note
     }
 `;
 
@@ -133,6 +163,17 @@ const resolvers = {
                 return [];
             }
         },
+        getAllCategories: async () => {
+            try {
+                const response = await axios.get(`${API_URL}/category/search`, {
+                    headers: { 'Content-Type': 'application/json', 'apiKey': API_KEY }
+                });
+                return response.data.data || [];
+            } catch (error) {
+                console.error('Error Fetching categories', error);
+                return [];
+            }
+        }
 
     },
 
@@ -207,6 +248,45 @@ const resolvers = {
                 return null;
             }
         },
+        AssignedCategoryToProject: async (_, { projectID, categoryID }) => {
+            try {
+                await axios.put(
+                    `${API_URL}/proj/${projectID}`,
+                    { categoryID },
+                    { headers: { 'Content-Type': 'application/json', 'apiKey': API_KEY } }
+                );
+                return { projectID, categoryID };
+            } catch (error) {
+                console.error('Error Assigning category to project', error);
+                return null;
+            }
+        },
+        AssignedCategoryToTask: async (_, { taskID, categoryID }) => {
+            try {
+                await axios.put(
+                    `${API_URL}/task/${taskID}`,
+                    { categoryID },
+                    { headers: { 'Content-Type': 'application/json', 'apiKey': API_KEY } }
+                );
+                return { taskID, categoryID };
+            } catch (error) {
+                console.error('Error Assigning category to task', error);
+                return null;
+            }
+        },
+        createNote: async (_, { noteText, objID, noteObjCode }) => {
+            try {
+                await axios.post(
+                    `${API_URL}/note`,
+                    { noteText, objID, noteObjCode },
+                    { headers: { 'Content-Type': 'application/json', 'apiKey': API_KEY } }
+                );
+                return { noteText, objID, noteObjCode };
+            } catch (error) {
+                console.error('Error Creating note', error);
+                return null;
+            }
+        }
     }
 };
 
